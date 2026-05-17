@@ -23,11 +23,14 @@ export interface CustomPropertyRule {
 	instruction: string;
 }
 
-export interface FileAutoFrontMatterSettings {
+export interface FrontMatterGeneratorSettings {
 	apiBaseUrl: string;
 	apiKey: string;
 	model: string;
 	apiType: ApiType;
+	enableFileName: boolean;
+	enableTags: boolean;
+	enableDescription: boolean;
 	namingStyle: NamingStyle;
 	descriptionLanguage: DescriptionLanguage;
 	contentMode: ContentMode;
@@ -37,7 +40,7 @@ export interface FileAutoFrontMatterSettings {
 	maxGeneratedTags: number;
 	tagContextLimit: number;
 	tagWriteMode: TagWriteMode;
-	customProperties: string;
+	customProperties: CustomPropertyRule[];
 }
 
 export interface FilenameCandidate {
@@ -51,6 +54,9 @@ export interface ExistingTag {
 }
 
 export interface AutoFrontMatterPromptInput {
+	enableFileName: boolean;
+	enableTags: boolean;
+	enableDescription: boolean;
 	relativePath: string;
 	folderPath: string;
 	currentBasename: string;
@@ -85,11 +91,14 @@ export interface AutoFrontMatterProvider {
 	testConnection(request: Pick<AutoFrontMatterProviderRequest, "apiBaseUrl" | "apiKey" | "model">): Promise<void>;
 }
 
-export const DEFAULT_SETTINGS: FileAutoFrontMatterSettings = {
+export const DEFAULT_SETTINGS: FrontMatterGeneratorSettings = {
 	apiBaseUrl: "https://api.openai.com/v1",
 	apiKey: "",
 	model: "gpt-4o-mini",
 	apiType: "chat-completions",
+	enableFileName: false,
+	enableTags: true,
+	enableDescription: true,
 	namingStyle: "kebab-case",
 	descriptionLanguage: "chinese",
 	contentMode: "first-lines",
@@ -99,5 +108,9 @@ export const DEFAULT_SETTINGS: FileAutoFrontMatterSettings = {
 	maxGeneratedTags: 5,
 	tagContextLimit: 300,
 	tagWriteMode: "replace",
-	customProperties: "",
+	customProperties: [],
+};
+
+export type LegacySettings = Partial<Omit<FrontMatterGeneratorSettings, "customProperties">> & {
+	customProperties?: string | CustomPropertyRule[];
 };

@@ -3,14 +3,14 @@ import {FrontMatterConfirmModal} from "./confirm-modal";
 import {extractPromptContent} from "./content";
 import {cleanNameToStyle} from "./naming";
 import {getBasename, getExtension, getFolderPath, isPathExcluded} from "./path";
-import {parseCustomPropertyRules} from "./properties";
+import {normalizeCustomPropertyRules} from "./properties";
 import {ChatCompletionsProvider, ResponsesProvider} from "./providers";
 import {AutoFrontMatterSettingTab} from "./settings";
 import {collectCurrentFileTags, collectVaultTags, filterSuggestedTags, mergeTags} from "./tags";
-import {AutoFrontMatterProvider, AutoFrontMatterResult, DEFAULT_SETTINGS, FileAutoFrontMatterSettings, FilenameCandidate, FrontMatterPropertyValue} from "./types";
+import {AutoFrontMatterProvider, AutoFrontMatterResult, DEFAULT_SETTINGS, FrontMatterGeneratorSettings, FilenameCandidate, FrontMatterPropertyValue, LegacySettings} from "./types";
 
-export default class AutoFrontMatterPlugin extends Plugin {
-	settings: FileAutoFrontMatterSettings = DEFAULT_SETTINGS;
+export default class FrontMatterGeneratorPlugin extends Plugin {
+	settings: FrontMatterGeneratorSettings = DEFAULT_SETTINGS;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -33,7 +33,12 @@ export default class AutoFrontMatterPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<FileAutoFrontMatterSettings>);
+		const loaded = await this.loadData() as LegacySettings | null;
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...(loaded ?? {}),
+			customProperties: normalizeCustomPropertyRules(loaded?.customProperties),
+		};
 	}
 
 	async saveSettings(): Promise<void> {
@@ -55,31 +60,31 @@ export default class AutoFrontMatterPlugin extends Plugin {
 			return;
 		}
 
-		new Notice("Auto Front Matter: testing API provider...");
+		new Notice("Front Matter Generator: testing API provider...");
 		try {
 			await this.getProvider().testConnection({
 				apiBaseUrl: this.settings.apiBaseUrl,
 				apiKey: this.settings.apiKey,
 				model: this.settings.model,
 			});
-			new Notice("Auto Front Matter: API provider test succeeded.");
+			new Notice("Front Matter Generator: API provider test succeeded.");
 		} catch (error) {
-			console.error("Auto Front Matter provider test failed", error);
-			new Notice(`Auto Front Matter: provider test failed. ${this.errorMessage(error)}`);
+			console.error("Front Matter Generator provider test failed", error);
+			new Notice(`Front Matter Generator: provider test failed. ${this.errorMessage(error)}`);
 		}
 	}
 
 	private validateSettings(): boolean {
 		if (!this.settings.apiBaseUrl.trim()) {
-			new Notice("Auto Front Matter: API base URL is required.");
+			new Notice("Front Matter Generator: API base URL is required.");
 			return false;
 		}
 		if (!this.settings.apiKey.trim()) {
-			new Notice("Auto Front Matter: API key is required.");
+			new Notice("Front Matter Generator: API key is required.");
 			return false;
 		}
 		if (!this.settings.model.trim()) {
-			new Notice("Auto Front Matter: Model is required.");
+			new Notice("Front Matter Generator: Model is required.");
 			return false;
 		}
 		return true;
@@ -89,13 +94,17 @@ export default class AutoFrontMatterPlugin extends Plugin {
 		if (!this.validateSettings()) {
 			return;
 		}
-
-		if (isPathExcluded(file.path, this.settings.excludedPaths)) {
-			new Notice("Auto Front Matter: This file is in an excluded path.");
+		if (!this.hasEnabledWork()) {
+			new Notice("Front Matter Generator: enable at least one generation feature or custom property.");
 			return;
 		}
 
-		new Notice("Auto Front Matter: generating metadata...");
+		if (isPathExcluded(file.path, this.settings.excludedPaths)) {
+			new Notice("Front Matter Generator: This file is in an excluded path.");
+			return;
+		}
+
+		new Notice("Front Matter Generator: generating metadata...");
 
 		try {
 			const markdown = await this.app.vault.cachedRead(file);
@@ -106,7 +115,7 @@ export default class AutoFrontMatterPlugin extends Plugin {
 			const frontmatter = fileCache?.frontmatter;
 			const currentTags = collectCurrentFileTags(frontmatter, fileCache?.tags?.map((tag) => tag.tag));
 			const existingDescription = typeof frontmatter?.description === "string" ? frontmatter.description : "";
-			const customProperties = parseCustomPropertyRules(this.settings.customProperties);
+			const customProperties = normalizeCustomPropertyRules(this.settings.customProperties);
 			const existingCustomProperties: Record<string, unknown> = {};
 			for (const rule of customProperties) {
 				if (frontmatter && Object.prototype.hasOwnProperty.call(frontmatter, rule.name)) {
@@ -119,6 +128,9 @@ export default class AutoFrontMatterPlugin extends Plugin {
 				apiBaseUrl: this.settings.apiBaseUrl,
 				apiKey: this.settings.apiKey,
 				model: this.settings.model,
+				enableFileName: this.settings.enableFileName,
+				enableTags: this.settings.enableTags,
+				enableDescription: this.settings.enableDescription,
 				relativePath: file.path,
 				folderPath,
 				currentBasename,
@@ -135,41 +147,58 @@ export default class AutoFrontMatterPlugin extends Plugin {
 				existingCustomProperties,
 			});
 
-			const filenameCandidates = this.normalizeFilenameCandidates(result.filenameCandidates, currentBasename);
-			if (filenameCandidates.length === 0) {
-				new Notice("Auto Front Matter: No valid filename candidates were returned.");
+			const filenameCandidates = this.settings.enableFileName
+				? this.normalizeFilenameCandidates(result.filenameCandidates, currentBasename)
+				: [];
+			if (this.settings.enableFileName && filenameCandidates.length === 0) {
+				new Notice("Front Matter Generator: No valid filename candidates were returned.");
 				return;
 			}
 
-			const generatedTags = filterSuggestedTags(
-				result.tags,
-				existingTags,
-				this.settings.tagPolicy,
-				this.settings.maxGeneratedTags,
-			);
-			const finalTags = mergeTags(currentTags, generatedTags, this.settings.tagWriteMode);
+			const generatedTags = this.settings.enableTags
+				? filterSuggestedTags(
+					result.tags,
+					existingTags,
+					this.settings.tagPolicy,
+					this.settings.maxGeneratedTags,
+				)
+				: [];
+			const finalTags = this.settings.enableTags ? mergeTags(currentTags, generatedTags, this.settings.tagWriteMode) : currentTags;
 
 			new FrontMatterConfirmModal(this.app, {
 				filePath: file.path,
 				contentMode: this.settings.contentMode,
 				descriptionLanguage: this.settings.descriptionLanguage,
 				tagPolicy: this.settings.tagPolicy,
-				settings: {namingStyle: this.settings.namingStyle},
+				settings: {
+					enableFileName: this.settings.enableFileName,
+					enableTags: this.settings.enableTags,
+					enableDescription: this.settings.enableDescription,
+					namingStyle: this.settings.namingStyle,
+				},
 				filenameCandidates,
-				generatedTags: finalTags,
-				generatedDescription: result.description,
+				generatedTags: this.settings.enableTags ? finalTags : [],
+				generatedDescription: this.settings.enableDescription ? result.description : "",
 				generatedProperties: result.properties,
 				onSubmit: async (finalBasename) => {
 					await this.applyResult(file, finalBasename, {
 						...result,
-						tags: finalTags,
+						tags: this.settings.enableTags ? finalTags : [],
+						description: this.settings.enableDescription ? result.description : "",
 					});
 				},
 			}).open();
 		} catch (error) {
-			console.error("Auto Front Matter failed", error);
-			new Notice(`Auto Front Matter: ${this.errorMessage(error)}`);
+			console.error("Front Matter Generator failed", error);
+			new Notice(`Front Matter Generator: ${this.errorMessage(error)}`);
 		}
+	}
+
+	private hasEnabledWork(): boolean {
+		return this.settings.enableFileName
+			|| this.settings.enableTags
+			|| this.settings.enableDescription
+			|| normalizeCustomPropertyRules(this.settings.customProperties).length > 0;
 	}
 
 	private normalizeFilenameCandidates(candidates: FilenameCandidate[], currentBasename: string): FilenameCandidate[] {
@@ -205,10 +234,10 @@ export default class AutoFrontMatterPlugin extends Plugin {
 		const properties = result.properties;
 
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-			if (result.tags.length > 0) {
+			if (this.settings.enableTags && result.tags.length > 0) {
 				frontmatter.tags = result.tags;
 			}
-			if (description) {
+			if (this.settings.enableDescription && description) {
 				frontmatter.description = description;
 			}
 			for (const [key, value] of Object.entries(properties)) {
@@ -216,14 +245,16 @@ export default class AutoFrontMatterPlugin extends Plugin {
 			}
 		});
 
-		const targetPath = this.nextAvailablePath(file.path, finalBasename);
-		if (targetPath !== file.path) {
+		const targetPath = this.settings.enableFileName && finalBasename
+			? this.nextAvailablePath(file.path, finalBasename)
+			: file.path;
+		if (this.settings.enableFileName && targetPath !== file.path) {
 			await this.app.fileManager.renameFile(file, targetPath);
-			new Notice(`Auto Front Matter: updated frontmatter and renamed to ${targetPath}.`);
+			new Notice(`Front Matter Generator: updated frontmatter and renamed to ${targetPath}.`);
 			return;
 		}
 
-		new Notice("Auto Front Matter: frontmatter updated.");
+		new Notice("Front Matter Generator: frontmatter updated.");
 	}
 
 	private writePropertyValue(frontmatter: any, key: string, value: FrontMatterPropertyValue): void {

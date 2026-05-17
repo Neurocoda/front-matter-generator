@@ -109,21 +109,58 @@ test("custom property parser skips reserved keys", () => {
 	]);
 });
 
+test("custom property rules migrate legacy text and structured rows", () => {
+	assert.deepEqual(properties.normalizeCustomPropertyRules("status: choose one"), [
+		{name: "status", instruction: "choose one"},
+	]);
+	assert.deepEqual(properties.normalizeCustomPropertyRules([
+		{name: "status", instruction: "choose one"},
+		{name: "tags", instruction: "reserved"},
+		{name: "rating", instruction: "1-5"},
+	]), [
+		{name: "status", instruction: "choose one"},
+		{name: "rating", instruction: "1-5"},
+	]);
+});
+
 test("parseAutoFrontMatterResult reads strict JSON", () => {
 	const result = providers.parseAutoFrontMatterResult(JSON.stringify({
 		filenameCandidates: [{name: "rest architecture", reason: "Fits the topic"}],
 		tags: ["api", "architecture"],
 		description: "A concise note description",
 		properties: {status: "evergreen", ignored: "nope"},
-	}), {customProperties: [{name: "status", instruction: "choose status"}]});
+	}), {
+		enableFileName: true,
+		enableTags: true,
+		enableDescription: true,
+		customProperties: [{name: "status", instruction: "choose status"}],
+	});
 	assert.deepEqual(result.filenameCandidates, [{name: "rest architecture", reason: "Fits the topic"}]);
 	assert.deepEqual(result.tags, ["api", "architecture"]);
 	assert.equal(result.description, "A concise note description");
 	assert.deepEqual(result.properties, {status: "evergreen"});
 });
 
+test("parseAutoFrontMatterResult allows disabled filename, tags, and description to be absent", () => {
+	const result = providers.parseAutoFrontMatterResult(JSON.stringify({
+		properties: {status: "evergreen"},
+	}), {
+		enableFileName: false,
+		enableTags: false,
+		enableDescription: false,
+		customProperties: [{name: "status", instruction: "choose status"}],
+	});
+	assert.deepEqual(result.filenameCandidates, []);
+	assert.deepEqual(result.tags, []);
+	assert.equal(result.description, "");
+	assert.deepEqual(result.properties, {status: "evergreen"});
+});
+
 test("buildUserPrompt includes tag and path context", () => {
 	const text = prompt.buildUserPrompt({
+		enableFileName: true,
+		enableTags: true,
+		enableDescription: true,
 		relativePath: "inbox/rest.md",
 		folderPath: "inbox",
 		currentBasename: "rest",
@@ -143,4 +180,32 @@ test("buildUserPrompt includes tag and path context", () => {
 	assert.match(text, /Description language: Chinese/);
 	assert.match(text, /api \(3\)/);
 	assert.match(text, /status: choose one/);
+});
+
+test("buildUserPrompt omits disabled tasks", () => {
+	const text = prompt.buildUserPrompt({
+		enableFileName: false,
+		enableTags: false,
+		enableDescription: false,
+		relativePath: "inbox/rest.md",
+		folderPath: "inbox",
+		currentBasename: "rest",
+		namingStyle: "kebab-case",
+		descriptionLanguage: "chinese",
+		contentMode: "first-lines",
+		content: "# REST\nBody",
+		currentTags: ["api"],
+		existingDescription: "old description",
+		existingTags: [{tag: "api", count: 3}],
+		tagPolicy: "prefer-existing",
+		maxGeneratedTags: 5,
+		customProperties: [{name: "status", instruction: "choose one"}],
+		existingCustomProperties: {status: "seedling"},
+	});
+	assert.doesNotMatch(text, /filenameCandidates/);
+	assert.doesNotMatch(text, /"tags":/);
+	assert.doesNotMatch(text, /"description":/);
+	assert.match(text, /"properties"/);
+	assert.doesNotMatch(text, /Description language:/);
+	assert.doesNotMatch(text, /Vault tag context:/);
 });

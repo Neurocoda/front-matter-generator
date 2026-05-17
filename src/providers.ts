@@ -103,7 +103,7 @@ function parseTags(value: unknown): string[] {
 		.filter((item) => item.length > 0);
 }
 
-export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFrontMatterProviderRequest, "customProperties">): AutoFrontMatterResult {
+export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFrontMatterProviderRequest, "customProperties" | "enableFileName" | "enableTags" | "enableDescription">): AutoFrontMatterResult {
 	const extracted = extractJsonText(text);
 	let parsed: unknown;
 	try {
@@ -118,17 +118,17 @@ export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFront
 
 	const record = parsed as Record<string, unknown>;
 	const candidatesValue = record.filenameCandidates ?? record.candidates;
-	const filenameCandidates = Array.isArray(candidatesValue)
+	const filenameCandidates = request.enableFileName && Array.isArray(candidatesValue)
 		? candidatesValue.map(parseFilenameCandidate).filter((candidate): candidate is FilenameCandidate => candidate !== null)
 		: [];
-	const description = toString(record.description);
+	const description = request.enableDescription ? toString(record.description) : "";
 	const propertiesValue = typeof record.properties === "object" && record.properties !== null
 		? record.properties as Record<string, unknown>
 		: {};
 
 	return {
 		filenameCandidates,
-		tags: parseTags(record.tags),
+		tags: request.enableTags ? parseTags(record.tags) : [],
 		description,
 		properties: pickConfiguredProperties(propertiesValue, request.customProperties),
 	};

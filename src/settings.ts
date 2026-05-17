@@ -1,5 +1,6 @@
 import {App, ButtonComponent, PluginSettingTab, Setting} from "obsidian";
-import AutoFrontMatterPlugin from "./main";
+import FrontMatterGeneratorPlugin from "./main";
+import {normalizeCustomPropertyRules} from "./properties";
 import {ApiType, ContentMode, DescriptionLanguage, NamingStyle, TagPolicy, TagWriteMode} from "./types";
 
 const API_TYPE_LABELS: Record<ApiType, string> = {
@@ -39,9 +40,9 @@ const TAG_WRITE_MODE_LABELS: Record<TagWriteMode, string> = {
 };
 
 export class AutoFrontMatterSettingTab extends PluginSettingTab {
-	plugin: AutoFrontMatterPlugin;
+	plugin: FrontMatterGeneratorPlugin;
 
-	constructor(app: App, plugin: AutoFrontMatterPlugin) {
+	constructor(app: App, plugin: FrontMatterGeneratorPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -109,29 +110,7 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 					await this.plugin.testProviderConnection();
 				}));
 
-		new Setting(containerEl).setName("Generation behavior").setHeading();
-
-		new Setting(containerEl)
-			.setName("Naming style")
-			.setDesc("The selected style is enforced in both the AI prompt and local cleanup.")
-			.addDropdown((dropdown) => dropdown
-				.addOptions(NAMING_STYLE_LABELS)
-				.setValue(this.plugin.settings.namingStyle)
-				.onChange(async (value) => {
-					this.plugin.settings.namingStyle = value as NamingStyle;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName("Description language")
-			.setDesc("Choose the language used for the frontmatter description.")
-			.addDropdown((dropdown) => dropdown
-				.addOptions(DESCRIPTION_LANGUAGE_LABELS)
-				.setValue(this.plugin.settings.descriptionLanguage)
-				.onChange(async (value) => {
-					this.plugin.settings.descriptionLanguage = value as DescriptionLanguage;
-					await this.plugin.saveSettings();
-				}));
+		new Setting(containerEl).setName("Content").setHeading();
 
 		new Setting(containerEl)
 			.setName("Content mode")
@@ -164,79 +143,131 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 				});
 		}
 
+		new Setting(containerEl).setName("Description").setHeading();
+
+		new Setting(containerEl)
+			.setName("Enable description generation")
+			.setDesc("Generate and overwrite the frontmatter description.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.enableDescription)
+				.onChange(async (value) => {
+					this.plugin.settings.enableDescription = value;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
+
+		if (this.plugin.settings.enableDescription) {
+			new Setting(containerEl)
+				.setName("Description language")
+				.setDesc("Choose the language used for the frontmatter description.")
+				.addDropdown((dropdown) => dropdown
+					.addOptions(DESCRIPTION_LANGUAGE_LABELS)
+					.setValue(this.plugin.settings.descriptionLanguage)
+					.onChange(async (value) => {
+						this.plugin.settings.descriptionLanguage = value as DescriptionLanguage;
+						await this.plugin.saveSettings();
+					}));
+		}
+
+		new Setting(containerEl).setName("File name").setHeading();
+
+		new Setting(containerEl)
+			.setName("Enable file name generation")
+			.setDesc("Generate filename candidates and rename the note after confirmation.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.enableFileName)
+				.onChange(async (value) => {
+					this.plugin.settings.enableFileName = value;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
+
+		if (this.plugin.settings.enableFileName) {
+			new Setting(containerEl)
+				.setName("Naming style")
+				.setDesc("The selected style is enforced in both the AI prompt and local cleanup.")
+				.addDropdown((dropdown) => dropdown
+					.addOptions(NAMING_STYLE_LABELS)
+					.setValue(this.plugin.settings.namingStyle)
+					.onChange(async (value) => {
+						this.plugin.settings.namingStyle = value as NamingStyle;
+						await this.plugin.saveSettings();
+					}));
+		}
+
 		new Setting(containerEl).setName("Tags").setHeading();
 
 		new Setting(containerEl)
-			.setName("Tag policy")
-			.setDesc("Controls whether generated tags may create new vault tags.")
-			.addDropdown((dropdown) => dropdown
-				.addOptions(TAG_POLICY_LABELS)
-				.setValue(this.plugin.settings.tagPolicy)
+			.setName("Enable tag generation")
+			.setDesc("Generate and write frontmatter tags.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.enableTags)
 				.onChange(async (value) => {
-					this.plugin.settings.tagPolicy = value as TagPolicy;
+					this.plugin.settings.enableTags = value;
 					await this.plugin.saveSettings();
+					this.display();
 				}));
 
-		new Setting(containerEl)
-			.setName("Tag write mode")
-			.setDesc("Replace the note's tags or merge generated tags with existing tags.")
-			.addDropdown((dropdown) => dropdown
-				.addOptions(TAG_WRITE_MODE_LABELS)
-				.setValue(this.plugin.settings.tagWriteMode)
-				.onChange(async (value) => {
-					this.plugin.settings.tagWriteMode = value as TagWriteMode;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName("Max generated tags")
-			.setDesc("Maximum number of tags to write.")
-			.addText((text) => {
-				text.inputEl.type = "number";
-				text.inputEl.min = "1";
-				text.inputEl.step = "1";
-				text
-					.setPlaceholder("5")
-					.setValue(String(this.plugin.settings.maxGeneratedTags))
+		if (this.plugin.settings.enableTags) {
+			new Setting(containerEl)
+				.setName("Tag policy")
+				.setDesc("Controls whether generated tags may create new vault tags.")
+				.addDropdown((dropdown) => dropdown
+					.addOptions(TAG_POLICY_LABELS)
+					.setValue(this.plugin.settings.tagPolicy)
 					.onChange(async (value) => {
-						const parsed = Number.parseInt(value, 10);
-						this.plugin.settings.maxGeneratedTags = Number.isFinite(parsed) ? Math.max(1, parsed) : 5;
+						this.plugin.settings.tagPolicy = value as TagPolicy;
 						await this.plugin.saveSettings();
-					});
-			});
+					}));
 
-		new Setting(containerEl)
-			.setName("Tag context limit")
-			.setDesc("Maximum number of existing vault tags sent as context.")
-			.addText((text) => {
-				text.inputEl.type = "number";
-				text.inputEl.min = "0";
-				text.inputEl.step = "1";
-				text
-					.setPlaceholder("300")
-					.setValue(String(this.plugin.settings.tagContextLimit))
+			new Setting(containerEl)
+				.setName("Tag write mode")
+				.setDesc("Replace the note's tags or merge generated tags with existing tags.")
+				.addDropdown((dropdown) => dropdown
+					.addOptions(TAG_WRITE_MODE_LABELS)
+					.setValue(this.plugin.settings.tagWriteMode)
 					.onChange(async (value) => {
-						const parsed = Number.parseInt(value, 10);
-						this.plugin.settings.tagContextLimit = Number.isFinite(parsed) ? Math.max(0, parsed) : 300;
+						this.plugin.settings.tagWriteMode = value as TagWriteMode;
 						await this.plugin.saveSettings();
-					});
-			});
+					}));
+
+			new Setting(containerEl)
+				.setName("Max generated tags")
+				.setDesc("Maximum number of tags to write.")
+				.addText((text) => {
+					text.inputEl.type = "number";
+					text.inputEl.min = "1";
+					text.inputEl.step = "1";
+					text
+						.setPlaceholder("5")
+						.setValue(String(this.plugin.settings.maxGeneratedTags))
+						.onChange(async (value) => {
+							const parsed = Number.parseInt(value, 10);
+							this.plugin.settings.maxGeneratedTags = Number.isFinite(parsed) ? Math.max(1, parsed) : 5;
+							await this.plugin.saveSettings();
+						});
+				});
+
+			new Setting(containerEl)
+				.setName("Tag context limit")
+				.setDesc("Maximum number of existing vault tags sent as context.")
+				.addText((text) => {
+					text.inputEl.type = "number";
+					text.inputEl.min = "0";
+					text.inputEl.step = "1";
+					text
+						.setPlaceholder("300")
+						.setValue(String(this.plugin.settings.tagContextLimit))
+						.onChange(async (value) => {
+							const parsed = Number.parseInt(value, 10);
+							this.plugin.settings.tagContextLimit = Number.isFinite(parsed) ? Math.max(0, parsed) : 300;
+							await this.plugin.saveSettings();
+						});
+				});
+		}
 
 		new Setting(containerEl).setName("Custom properties").setHeading();
-
-		new Setting(containerEl)
-			.setName("Custom properties")
-			.setDesc("One property per line: propertyName: generation instruction. tags and description are reserved.")
-			.addTextArea((text) => {
-				text.inputEl.rows = 6;
-				text
-					.setPlaceholder("status: Choose one of seedling, evergreen, archived")
-					.setValue(this.plugin.settings.customProperties)
-					.onChange(async (value) => {
-						this.plugin.settings.customProperties = value;
-						await this.plugin.saveSettings();
-					});
-			});
+		this.renderCustomProperties(containerEl);
 
 		new Setting(containerEl).setName("Safety").setHeading();
 
@@ -253,5 +284,71 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+	}
+
+	private renderCustomProperties(containerEl: HTMLElement): void {
+		const rules = normalizeCustomPropertyRules(this.plugin.settings.customProperties);
+		this.plugin.settings.customProperties = rules;
+
+		const wrapper = containerEl.createDiv({cls: "front-matter-generator-custom-properties"});
+		if (rules.length === 0) {
+			wrapper.createDiv({
+				cls: "front-matter-generator-empty",
+				text: "No custom properties configured.",
+			});
+		}
+
+		rules.forEach((rule, index) => {
+			const row = wrapper.createDiv({cls: "front-matter-generator-property-row"});
+			const nameInput = row.createEl("input", {
+				type: "text",
+				placeholder: "property",
+				cls: "front-matter-generator-property-name",
+			});
+			nameInput.value = rule.name;
+			const instructionInput = row.createEl("input", {
+				type: "text",
+				placeholder: "generation instruction",
+				cls: "front-matter-generator-property-instruction",
+			});
+			instructionInput.value = rule.instruction;
+
+			const saveRow = async (): Promise<void> => {
+				this.plugin.settings.customProperties[index] = {
+					name: nameInput.value.trim(),
+					instruction: instructionInput.value.trim(),
+				};
+				this.plugin.settings.customProperties = normalizeCustomPropertyRules(this.plugin.settings.customProperties);
+				await this.plugin.saveSettings();
+			};
+
+			nameInput.addEventListener("change", () => {
+				void saveRow();
+			});
+			instructionInput.addEventListener("change", () => {
+				void saveRow();
+			});
+
+			new ButtonComponent(row)
+				.setIcon("trash")
+				.setTooltip("Remove property")
+				.onClick(async () => {
+					this.plugin.settings.customProperties.splice(index, 1);
+					await this.plugin.saveSettings();
+					this.display();
+				});
+		});
+
+		new Setting(containerEl)
+			.setName("Add custom property")
+			.setDesc("Custom properties are generated as frontmatter fields. tags and description are reserved.")
+			.addButton((button) => button
+				.setButtonText("Add property")
+				.setIcon("plus")
+				.onClick(async () => {
+					this.plugin.settings.customProperties.push({name: "", instruction: ""});
+					await this.plugin.saveSettings();
+					this.display();
+				}));
 	}
 }

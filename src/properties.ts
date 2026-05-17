@@ -1,7 +1,8 @@
 import {CustomPropertyRule, FrontMatterPropertyValue} from "./types";
 
+const RESERVED_PROPERTY_NAMES = new Set(["tags", "description"]);
+
 export function parseCustomPropertyRules(text: string): CustomPropertyRule[] {
-	const reserved = new Set(["tags", "description"]);
 	const seen = new Set<string>();
 	return text
 		.split(/\r?\n/)
@@ -16,13 +17,40 @@ export function parseCustomPropertyRules(text: string): CustomPropertyRule[] {
 			const instruction = line.slice(index + 1).trim();
 			const normalizedName = name.trim();
 			const lowerName = normalizedName.toLowerCase();
-			if (!normalizedName || !instruction || reserved.has(lowerName) || seen.has(lowerName)) {
+			if (!normalizedName || !instruction || RESERVED_PROPERTY_NAMES.has(lowerName) || seen.has(lowerName)) {
 				return null;
 			}
 			seen.add(lowerName);
 			return {name: normalizedName, instruction};
 		})
 		.filter((value): value is CustomPropertyRule => value !== null);
+}
+
+export function normalizeCustomPropertyRules(value: unknown): CustomPropertyRule[] {
+	if (typeof value === "string") {
+		return parseCustomPropertyRules(value);
+	}
+	if (!Array.isArray(value)) {
+		return [];
+	}
+
+	const seen = new Set<string>();
+	const output: CustomPropertyRule[] = [];
+	for (const item of value) {
+		if (typeof item !== "object" || item === null) {
+			continue;
+		}
+		const record = item as Record<string, unknown>;
+		const name = typeof record.name === "string" ? record.name.trim() : "";
+		const instruction = typeof record.instruction === "string" ? record.instruction.trim() : "";
+		const lowerName = name.toLowerCase();
+		if (!name || !instruction || RESERVED_PROPERTY_NAMES.has(lowerName) || seen.has(lowerName)) {
+			continue;
+		}
+		seen.add(lowerName);
+		output.push({name, instruction});
+	}
+	return output;
 }
 
 export function normalizePropertyValue(value: unknown): FrontMatterPropertyValue {

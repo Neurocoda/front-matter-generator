@@ -1,22 +1,22 @@
-.auto-front-matter-modal .auto-front-matter-summary {
+.front-matter-generator-modal .front-matter-generator-summary {
 	margin-bottom: 12px;
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 }
 
-.auto-front-matter-modal .auto-front-matter-path {
+.front-matter-generator-modal .front-matter-generator-path {
 	font-family: var(--font-monospace);
 	color: var(--text-normal);
 }
 
-.auto-front-matter-modal .auto-front-matter-candidates {
+.front-matter-generator-modal .front-matter-generator-candidates {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	margin: 12px 0;
 }
 
-.auto-front-matter-modal .auto-front-matter-candidate {
+.front-matter-generator-modal .front-matter-generator-candidate {
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
@@ -32,24 +32,24 @@
 	cursor: pointer;
 }
 
-.auto-front-matter-modal .auto-front-matter-candidate:hover {
+.front-matter-generator-modal .front-matter-generator-candidate:hover {
 	border-color: var(--interactive-accent);
 	background: var(--background-modifier-hover);
 }
 
-.auto-front-matter-modal .auto-front-matter-candidate-name {
+.front-matter-generator-modal .front-matter-generator-candidate-name {
 	font-family: var(--font-monospace);
 	font-weight: 600;
 	overflow-wrap: anywhere;
 }
 
-.auto-front-matter-modal .auto-front-matter-candidate-reason {
+.front-matter-generator-modal .front-matter-generator-candidate-reason {
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 	line-height: 1.35;
 }
 
-.auto-front-matter-modal .auto-front-matter-preview {
+.front-matter-generator-modal .front-matter-generator-preview {
 	margin-top: 12px;
 	padding: 10px;
 	border: 1px solid var(--background-modifier-border);
@@ -61,27 +61,52 @@
 	overflow-wrap: anywhere;
 }
 
-.auto-front-matter-modal .auto-front-matter-preview h3 {
+.front-matter-generator-modal .front-matter-generator-preview h3 {
 	margin: 0 0 8px;
 	font-family: var(--font-interface);
 	font-size: var(--font-ui-medium);
 }
 
-.auto-front-matter-modal .auto-front-matter-muted {
+.front-matter-generator-modal .front-matter-generator-muted,
+.front-matter-generator-empty {
 	color: var(--text-muted);
-	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
 }
 
-.auto-front-matter-modal .auto-front-matter-final-preview {
+.front-matter-generator-modal .front-matter-generator-final-preview {
 	margin-top: 8px;
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 	overflow-wrap: anywhere;
 }
 
-.auto-front-matter-modal .auto-front-matter-actions {
+.front-matter-generator-modal .front-matter-generator-actions {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+.front-matter-generator-custom-properties {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 8px 0 12px;
+}
+
+.front-matter-generator-property-row {
+	display: grid;
+	grid-template-columns: minmax(120px, 180px) minmax(180px, 1fr) auto;
+	gap: 8px;
+	align-items: center;
+}
+
+.front-matter-generator-property-row input {
+	width: 100%;
+}
+
+@media (max-width: 700px) {
+	.front-matter-generator-property-row {
+		grid-template-columns: 1fr;
+	}
 }
