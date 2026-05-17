@@ -1,0 +1,87 @@
+.auto-front-matter-modal .auto-front-matter-summary {
+	margin-bottom: 12px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.auto-front-matter-modal .auto-front-matter-path {
+	font-family: var(--font-monospace);
+	color: var(--text-normal);
+}
+
+.auto-front-matter-modal .auto-front-matter-candidates {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.auto-front-matter-modal .auto-front-matter-candidate {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	min-height: 42px;
+	padding: 8px 10px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	text-align: left;
+	cursor: pointer;
+}
+
+.auto-front-matter-modal .auto-front-matter-candidate:hover {
+	border-color: var(--interactive-accent);
+	background: var(--background-modifier-hover);
+}
+
+.auto-front-matter-modal .auto-front-matter-candidate-name {
+	font-family: var(--font-monospace);
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.auto-front-matter-modal .auto-front-matter-candidate-reason {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.35;
+}
+
+.auto-front-matter-modal .auto-front-matter-preview {
+	margin-top: 12px;
+	padding: 10px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-secondary);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.auto-front-matter-modal .auto-front-matter-preview h3 {
+	margin: 0 0 8px;
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-medium);
+}
+
+.auto-front-matter-modal .auto-front-matter-muted {
+	color: var(--text-muted);
+	font-family: var(--font-interface);
+}
+
+.auto-front-matter-modal .auto-front-matter-final-preview {
+	margin-top: 8px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	overflow-wrap: anywhere;
+}
+
+.auto-front-matter-modal .auto-front-matter-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}

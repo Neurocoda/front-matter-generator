@@ -1,0 +1,28 @@
+{
+	"name": "obsidian-auto-front-matter-plugin",
+	"version": "1.0.0",
+	"description": "Generate filenames, tags, descriptions, and custom frontmatter properties for Obsidian Markdown files with AI.",
+	"main": "main.js",
+	"type": "module",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"test": "node --test tests/*.test.mjs"
+	},
+	"author": "Neurocoda",
+	"license": "MIT",
+	"homepage": "https://neurocoda.com",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Neurocoda/obsidian-auto-front-matter-plugin.git"
+	},
+	"devDependencies": {
+		"@types/node": "^16.11.6",
+		"esbuild": "0.25.5",
+		"tslib": "2.4.0",
+		"typescript": "^5.8.3"
+	},
+	"dependencies": {
+		"obsidian": "latest"
+	}
+}

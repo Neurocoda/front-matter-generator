@@ -1,0 +1,10 @@
+{
+	"id": "auto-front-matter-plugin",
+	"name": "Auto Front Matter",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Generate filenames, tags, descriptions, and custom frontmatter properties for Markdown files with AI.",
+	"author": "Neurocoda",
+	"authorUrl": "https://neurocoda.com",
+	"isDesktopOnly": false
+}
