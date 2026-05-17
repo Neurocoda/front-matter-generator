@@ -53,6 +53,28 @@ export function normalizeCustomPropertyRules(value: unknown): CustomPropertyRule
 	return output;
 }
 
+export function normalizeCustomPropertyRows(value: unknown): CustomPropertyRule[] {
+	if (typeof value === "string") {
+		return parseCustomPropertyRules(value);
+	}
+	if (!Array.isArray(value)) {
+		return [];
+	}
+
+	return value
+		.map((item) => {
+			if (typeof item !== "object" || item === null) {
+				return null;
+			}
+			const record = item as Record<string, unknown>;
+			return {
+				name: typeof record.name === "string" ? record.name : "",
+				instruction: typeof record.instruction === "string" ? record.instruction : "",
+			};
+		})
+		.filter((item): item is CustomPropertyRule => item !== null);
+}
+
 export function normalizePropertyValue(value: unknown): FrontMatterPropertyValue {
 	if (value === null) {
 		return null;

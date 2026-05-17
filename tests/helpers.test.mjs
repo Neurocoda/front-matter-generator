@@ -123,6 +123,22 @@ test("custom property rules migrate legacy text and structured rows", () => {
 	]);
 });
 
+test("custom property rows preserve empty UI rows", () => {
+	assert.deepEqual(properties.normalizeCustomPropertyRows([
+		{name: "", instruction: ""},
+		{name: "status", instruction: "choose one"},
+	]), [
+		{name: "", instruction: ""},
+		{name: "status", instruction: "choose one"},
+	]);
+	assert.deepEqual(properties.normalizeCustomPropertyRules([
+		{name: "", instruction: ""},
+		{name: "status", instruction: "choose one"},
+	]), [
+		{name: "status", instruction: "choose one"},
+	]);
+});
+
 test("parseAutoFrontMatterResult reads strict JSON", () => {
 	const result = providers.parseAutoFrontMatterResult(JSON.stringify({
 		filenameCandidates: [{name: "rest architecture", reason: "Fits the topic"}],

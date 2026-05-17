@@ -1,6 +1,6 @@
 {
 	"name": "front-matter-generator",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Generate frontmatter descriptions, tags, optional filenames, and custom properties for Obsidian Markdown files with AI.",
 	"main": "main.js",
 	"type": "module",

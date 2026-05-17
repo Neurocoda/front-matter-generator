@@ -15,6 +15,20 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 	async onload(): Promise<void> {
 		await this.loadSettings();
 		this.addSettingTab(new AutoFrontMatterSettingTab(this.app, this));
+		this.addCommand({
+			id: "generate-front-matter-for-current-file",
+			name: "Generate front matter for current file",
+			checkCallback: (checking) => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file || !this.isEligibleMarkdownFile(file)) {
+					return false;
+				}
+				if (!checking) {
+					void this.generateForFile(file);
+				}
+				return true;
+			},
+		});
 
 		this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
 			if (!this.isEligibleMarkdownFile(file)) {

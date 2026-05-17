@@ -1,6 +1,6 @@
 import {App, ButtonComponent, PluginSettingTab, Setting} from "obsidian";
 import FrontMatterGeneratorPlugin from "./main";
-import {normalizeCustomPropertyRules} from "./properties";
+import {normalizeCustomPropertyRows, normalizeCustomPropertyRules} from "./properties";
 import {ApiType, ContentMode, DescriptionLanguage, NamingStyle, TagPolicy, TagWriteMode} from "./types";
 
 const API_TYPE_LABELS: Record<ApiType, string> = {
@@ -287,7 +287,7 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 	}
 
 	private renderCustomProperties(containerEl: HTMLElement): void {
-		const rules = normalizeCustomPropertyRules(this.plugin.settings.customProperties);
+		const rules = normalizeCustomPropertyRows(this.plugin.settings.customProperties);
 		this.plugin.settings.customProperties = rules;
 
 		const wrapper = containerEl.createDiv({cls: "front-matter-generator-custom-properties"});
@@ -318,7 +318,7 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 					name: nameInput.value.trim(),
 					instruction: instructionInput.value.trim(),
 				};
-				this.plugin.settings.customProperties = normalizeCustomPropertyRules(this.plugin.settings.customProperties);
+				this.plugin.settings.customProperties = normalizeCustomPropertyRows(this.plugin.settings.customProperties);
 				await this.plugin.saveSettings();
 			};
 
