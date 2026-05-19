@@ -103,7 +103,7 @@ function parseTags(value: unknown): string[] {
 		.filter((item) => item.length > 0);
 }
 
-export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFrontMatterProviderRequest, "customProperties" | "enableFileName" | "enableTags" | "enableDescription">): AutoFrontMatterResult {
+export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFrontMatterProviderRequest, "customProperties" | "enableFileName" | "enableTitle" | "enableTags" | "enableDescription">): AutoFrontMatterResult {
 	const extracted = extractJsonText(text);
 	let parsed: unknown;
 	try {
@@ -121,6 +121,7 @@ export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFront
 	const filenameCandidates = request.enableFileName && Array.isArray(candidatesValue)
 		? candidatesValue.map(parseFilenameCandidate).filter((candidate): candidate is FilenameCandidate => candidate !== null)
 		: [];
+	const title = request.enableTitle ? toString(record.title) : "";
 	const description = request.enableDescription ? toString(record.description) : "";
 	const propertiesValue = typeof record.properties === "object" && record.properties !== null
 		? record.properties as Record<string, unknown>
@@ -128,6 +129,7 @@ export function parseAutoFrontMatterResult(text: string, request: Pick<AutoFront
 
 	return {
 		filenameCandidates,
+		title,
 		tags: request.enableTags ? parseTags(record.tags) : [],
 		description,
 		properties: pickConfiguredProperties(propertiesValue, request.customProperties),

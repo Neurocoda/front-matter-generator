@@ -1,15 +1,17 @@
 # Front Matter Generator
 
-Front Matter Generator adds an `Auto: front matter` action to Markdown files in the Obsidian file explorer. It uses an OpenAI-compatible provider to generate frontmatter descriptions, tags, optional filename candidates, and custom properties from note content.
+Front Matter Generator adds an `Auto: front matter` action to Markdown files in the Obsidian file explorer. It uses an OpenAI-compatible provider to generate frontmatter titles, descriptions, tags, optional filename candidates, and custom properties from note content.
 
 ## Features
 
+- Generate or overwrite `title`.
 - Generate or overwrite `description`.
 - Generate `tags` with existing vault tags as context.
 - Optionally generate filename candidates and rename after confirmation.
 - Add custom frontmatter properties with per-property instructions.
 - Choose how much note content is sent: full text, first N lines, or headings only.
 - Use Chat Completions or Responses API style endpoints.
+- Exclude folders or regex-matched paths from generation.
 
 ## Usage
 
@@ -19,25 +21,34 @@ Front Matter Generator adds an `Auto: front matter` action to Markdown files in 
 4. Choose `Auto: front matter`.
 5. Review the generated frontmatter preview and click `Apply`.
 
+You can also run `Generate front matter for current file` from the command palette or bind it to a hotkey.
+
 File name generation is disabled by default. When enabled, the confirmation modal shows three filename candidates and a custom filename input before applying changes.
 
 ## Settings
 
 - `AI provider`: API base URL, API key, model, API type, and test button.
 - `Content`: controls the amount of Markdown sent to the provider.
-- `Description`: enable description generation and choose the output language.
 - `File name`: enable optional filename generation and choose naming style.
-- `Tags`: enable tag generation, choose tag policy, write mode, and context size.
-- `Custom properties`: add frontmatter property rows with a property name and instruction.
+- `Front matter`: enable title, description, and tag generation. Description language, tag policy, tag write mode, and tag context size are shown only when relevant.
+- `Custom properties`: add additional frontmatter property rows with a property name and instruction.
 - `Safety`: exclude folders or regex-matched paths.
 
 Excluded path rules support plain folder prefixes, JavaScript-style regular expressions, and `regex:` rules.
 
 ## Privacy And Network Use
 
-This plugin sends selected note content, vault-relative path context, current frontmatter context, and existing tag context to the configured AI provider when you run `Auto: front matter`. API keys are stored locally in this plugin's Obsidian data file and are not committed to the repository.
+This plugin sends data to the AI provider you configure only when you run `Auto: front matter` or the command palette action. The request may include selected note content, vault-relative path context, current frontmatter context, configured custom property instructions, and existing vault tag context so the model can generate useful metadata.
 
-Use `First N lines` or `Headings only` content mode to reduce token usage and limit shared content.
+API keys are stored locally in this plugin's Obsidian data file. They are not logged by the plugin and are not committed to the repository.
+
+The plugin has no client-side telemetry, no ads, no self-update mechanism, and no network calls other than the AI provider endpoint you configure. It does not read files outside your Obsidian vault. Account or payment requirements depend on your chosen AI provider.
+
+Use `First N lines` or `Headings only` content mode to reduce token usage and limit shared content. Use excluded paths to keep templates or private folders out of generation.
+
+## Compatibility
+
+Front Matter Generator is designed for Obsidian `0.15.0` and newer. It uses Obsidian APIs for reading notes, updating frontmatter, renaming files, settings, commands, file explorer menus, and network requests.
 
 ## Manual Installation
 
@@ -55,12 +66,6 @@ Required files:
 
 Then reload Obsidian and enable `Front Matter Generator` in Community Plugins.
 
-## Development
+## License
 
-```bash
-npm install
-npm test
-npm run build
-```
-
-Release assets are built locally. `main.js` is intentionally ignored by Git and uploaded only as a GitHub release asset.
+MIT. See `LICENSE`.

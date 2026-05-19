@@ -1,9 +1,9 @@
 {
 	"id": "front-matter-generator",
 	"name": "Front Matter Generator",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "Generate frontmatter descriptions, tags, optional filenames, and custom properties for Markdown files with AI.",
+	"description": "Generate frontmatter titles, descriptions, tags, optional filenames, and custom properties for Markdown files with AI.",
 	"author": "Neurocoda",
 	"authorUrl": "https://neurocoda.com",
 	"isDesktopOnly": false

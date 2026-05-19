@@ -29,6 +29,7 @@ export interface FrontMatterGeneratorSettings {
 	model: string;
 	apiType: ApiType;
 	enableFileName: boolean;
+	enableTitle: boolean;
 	enableTags: boolean;
 	enableDescription: boolean;
 	namingStyle: NamingStyle;
@@ -55,6 +56,7 @@ export interface ExistingTag {
 
 export interface AutoFrontMatterPromptInput {
 	enableFileName: boolean;
+	enableTitle: boolean;
 	enableTags: boolean;
 	enableDescription: boolean;
 	relativePath: string;
@@ -65,6 +67,7 @@ export interface AutoFrontMatterPromptInput {
 	contentMode: ContentMode;
 	content: string;
 	currentTags: string[];
+	existingTitle: string;
 	existingDescription: string;
 	existingTags: ExistingTag[];
 	tagPolicy: TagPolicy;
@@ -75,6 +78,7 @@ export interface AutoFrontMatterPromptInput {
 
 export interface AutoFrontMatterResult {
 	filenameCandidates: FilenameCandidate[];
+	title: string;
 	tags: string[];
 	description: string;
 	properties: Record<string, FrontMatterPropertyValue>;
@@ -97,6 +101,7 @@ export const DEFAULT_SETTINGS: FrontMatterGeneratorSettings = {
 	model: "gpt-4o-mini",
 	apiType: "chat-completions",
 	enableFileName: false,
+	enableTitle: true,
 	enableTags: true,
 	enableDescription: true,
 	namingStyle: "kebab-case",

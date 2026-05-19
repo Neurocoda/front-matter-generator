@@ -3,9 +3,17 @@ node_modules/
 
 # Build output
 main.js
+*.map
+dist/
+build/
+coverage/
 
 # Local plugin settings
 data.json
+
+# Caches
+.cache/
+.eslintcache
 
 # Noise
 .DS_Store

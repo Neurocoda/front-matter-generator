@@ -128,6 +128,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 			const fileCache = this.app.metadataCache.getFileCache(file);
 			const frontmatter = fileCache?.frontmatter;
 			const currentTags = collectCurrentFileTags(frontmatter, fileCache?.tags?.map((tag) => tag.tag));
+			const existingTitle = typeof frontmatter?.title === "string" ? frontmatter.title : "";
 			const existingDescription = typeof frontmatter?.description === "string" ? frontmatter.description : "";
 			const customProperties = normalizeCustomPropertyRules(this.settings.customProperties);
 			const existingCustomProperties: Record<string, unknown> = {};
@@ -143,6 +144,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 				apiKey: this.settings.apiKey,
 				model: this.settings.model,
 				enableFileName: this.settings.enableFileName,
+				enableTitle: this.settings.enableTitle,
 				enableTags: this.settings.enableTags,
 				enableDescription: this.settings.enableDescription,
 				relativePath: file.path,
@@ -153,6 +155,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 				contentMode: this.settings.contentMode,
 				content,
 				currentTags,
+				existingTitle,
 				existingDescription,
 				existingTags,
 				tagPolicy: this.settings.tagPolicy,
@@ -186,17 +189,20 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 				tagPolicy: this.settings.tagPolicy,
 				settings: {
 					enableFileName: this.settings.enableFileName,
+					enableTitle: this.settings.enableTitle,
 					enableTags: this.settings.enableTags,
 					enableDescription: this.settings.enableDescription,
 					namingStyle: this.settings.namingStyle,
 				},
 				filenameCandidates,
+				generatedTitle: this.settings.enableTitle ? result.title : "",
 				generatedTags: this.settings.enableTags ? finalTags : [],
 				generatedDescription: this.settings.enableDescription ? result.description : "",
 				generatedProperties: result.properties,
 				onSubmit: async (finalBasename) => {
 					await this.applyResult(file, finalBasename, {
 						...result,
+						title: this.settings.enableTitle ? result.title : "",
 						tags: this.settings.enableTags ? finalTags : [],
 						description: this.settings.enableDescription ? result.description : "",
 					});
@@ -210,6 +216,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 
 	private hasEnabledWork(): boolean {
 		return this.settings.enableFileName
+			|| this.settings.enableTitle
 			|| this.settings.enableTags
 			|| this.settings.enableDescription
 			|| normalizeCustomPropertyRules(this.settings.customProperties).length > 0;
@@ -244,10 +251,14 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 	}
 
 	private async applyResult(file: TFile, finalBasename: string, result: AutoFrontMatterResult): Promise<void> {
+		const title = result.title.trim();
 		const description = result.description.trim();
 		const properties = result.properties;
 
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			if (this.settings.enableTitle && title) {
+				frontmatter.title = title;
+			}
 			if (this.settings.enableTags && result.tags.length > 0) {
 				frontmatter.tags = result.tags;
 			}

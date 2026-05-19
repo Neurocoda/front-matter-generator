@@ -9,8 +9,9 @@ interface FrontMatterConfirmModalOptions {
 	contentMode: string;
 	descriptionLanguage: string;
 	tagPolicy: string;
-	settings: Pick<FrontMatterGeneratorSettings, "enableFileName" | "enableTags" | "enableDescription" | "namingStyle">;
+	settings: Pick<FrontMatterGeneratorSettings, "enableFileName" | "enableTitle" | "enableTags" | "enableDescription" | "namingStyle">;
 	filenameCandidates: FilenameCandidate[];
+	generatedTitle: string;
 	generatedTags: string[];
 	generatedDescription: string;
 	generatedProperties: Record<string, FrontMatterPropertyValue>;
@@ -120,6 +121,9 @@ export class FrontMatterConfirmModal extends Modal {
 		const frontmatterEl = contentEl.createDiv({cls: "front-matter-generator-preview"});
 		frontmatterEl.createEl("h3", {text: "Generated frontmatter"});
 
+		if (this.options.settings.enableTitle) {
+			frontmatterEl.createEl("div", {text: `title: ${this.options.generatedTitle || "(unchanged)"}`});
+		}
 		if (this.options.settings.enableTags) {
 			frontmatterEl.createEl("div", {text: `tags: ${this.options.generatedTags.length > 0 ? this.options.generatedTags.join(", ") : "(unchanged)"}`});
 		}
@@ -136,7 +140,7 @@ export class FrontMatterConfirmModal extends Modal {
 			}
 		}
 
-		if (!this.options.settings.enableTags && !this.options.settings.enableDescription && propertyLines.length === 0) {
+		if (!this.options.settings.enableTitle && !this.options.settings.enableTags && !this.options.settings.enableDescription && propertyLines.length === 0) {
 			frontmatterEl.createEl("div", {text: "(no frontmatter fields will be changed)", cls: "front-matter-generator-muted"});
 		}
 	}

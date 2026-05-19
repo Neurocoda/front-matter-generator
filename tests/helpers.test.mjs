@@ -103,7 +103,7 @@ test("mergeTags preserves existing tags when generated tags are empty", () => {
 });
 
 test("custom property parser skips reserved keys", () => {
-	assert.deepEqual(properties.parseCustomPropertyRules("status: choose one\ntags: bad\ndescription: bad\nrating: 1-5"), [
+	assert.deepEqual(properties.parseCustomPropertyRules("status: choose one\ntitle: bad\ntags: bad\ndescription: bad\nrating: 1-5"), [
 		{name: "status", instruction: "choose one"},
 		{name: "rating", instruction: "1-5"},
 	]);
@@ -115,6 +115,7 @@ test("custom property rules migrate legacy text and structured rows", () => {
 	]);
 	assert.deepEqual(properties.normalizeCustomPropertyRules([
 		{name: "status", instruction: "choose one"},
+		{name: "title", instruction: "reserved"},
 		{name: "tags", instruction: "reserved"},
 		{name: "rating", instruction: "1-5"},
 	]), [
@@ -142,31 +143,36 @@ test("custom property rows preserve empty UI rows", () => {
 test("parseAutoFrontMatterResult reads strict JSON", () => {
 	const result = providers.parseAutoFrontMatterResult(JSON.stringify({
 		filenameCandidates: [{name: "rest architecture", reason: "Fits the topic"}],
+		title: "REST architecture",
 		tags: ["api", "architecture"],
 		description: "A concise note description",
 		properties: {status: "evergreen", ignored: "nope"},
 	}), {
 		enableFileName: true,
+		enableTitle: true,
 		enableTags: true,
 		enableDescription: true,
 		customProperties: [{name: "status", instruction: "choose status"}],
 	});
 	assert.deepEqual(result.filenameCandidates, [{name: "rest architecture", reason: "Fits the topic"}]);
+	assert.equal(result.title, "REST architecture");
 	assert.deepEqual(result.tags, ["api", "architecture"]);
 	assert.equal(result.description, "A concise note description");
 	assert.deepEqual(result.properties, {status: "evergreen"});
 });
 
-test("parseAutoFrontMatterResult allows disabled filename, tags, and description to be absent", () => {
+test("parseAutoFrontMatterResult allows disabled filename, title, tags, and description to be absent", () => {
 	const result = providers.parseAutoFrontMatterResult(JSON.stringify({
 		properties: {status: "evergreen"},
 	}), {
 		enableFileName: false,
+		enableTitle: false,
 		enableTags: false,
 		enableDescription: false,
 		customProperties: [{name: "status", instruction: "choose status"}],
 	});
 	assert.deepEqual(result.filenameCandidates, []);
+	assert.equal(result.title, "");
 	assert.deepEqual(result.tags, []);
 	assert.equal(result.description, "");
 	assert.deepEqual(result.properties, {status: "evergreen"});
@@ -175,6 +181,7 @@ test("parseAutoFrontMatterResult allows disabled filename, tags, and description
 test("buildUserPrompt includes tag and path context", () => {
 	const text = prompt.buildUserPrompt({
 		enableFileName: true,
+		enableTitle: true,
 		enableTags: true,
 		enableDescription: true,
 		relativePath: "inbox/rest.md",
@@ -185,6 +192,7 @@ test("buildUserPrompt includes tag and path context", () => {
 		contentMode: "first-lines",
 		content: "# REST\nBody",
 		currentTags: ["api"],
+		existingTitle: "Old title",
 		existingDescription: "old description",
 		existingTags: [{tag: "api", count: 3}],
 		tagPolicy: "prefer-existing",
@@ -193,6 +201,8 @@ test("buildUserPrompt includes tag and path context", () => {
 		existingCustomProperties: {status: "seedling"},
 	});
 	assert.match(text, /Vault-relative path: inbox\/rest\.md/);
+	assert.match(text, /Existing title: Old title/);
+	assert.match(text, /"title":"concise note title"/);
 	assert.match(text, /Description language: Chinese/);
 	assert.match(text, /api \(3\)/);
 	assert.match(text, /status: choose one/);
@@ -201,6 +211,7 @@ test("buildUserPrompt includes tag and path context", () => {
 test("buildUserPrompt omits disabled tasks", () => {
 	const text = prompt.buildUserPrompt({
 		enableFileName: false,
+		enableTitle: false,
 		enableTags: false,
 		enableDescription: false,
 		relativePath: "inbox/rest.md",
@@ -211,6 +222,7 @@ test("buildUserPrompt omits disabled tasks", () => {
 		contentMode: "first-lines",
 		content: "# REST\nBody",
 		currentTags: ["api"],
+		existingTitle: "Old title",
 		existingDescription: "old description",
 		existingTags: [{tag: "api", count: 3}],
 		tagPolicy: "prefer-existing",
@@ -219,6 +231,8 @@ test("buildUserPrompt omits disabled tasks", () => {
 		existingCustomProperties: {status: "seedling"},
 	});
 	assert.doesNotMatch(text, /filenameCandidates/);
+	assert.doesNotMatch(text, /"title":/);
+	assert.doesNotMatch(text, /Existing title:/);
 	assert.doesNotMatch(text, /"tags":/);
 	assert.doesNotMatch(text, /"description":/);
 	assert.match(text, /"properties"/);

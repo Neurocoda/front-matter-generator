@@ -1,6 +1,6 @@
 import {CustomPropertyRule, FrontMatterPropertyValue} from "./types";
 
-const RESERVED_PROPERTY_NAMES = new Set(["tags", "description"]);
+const RESERVED_PROPERTY_NAMES = new Set(["title", "tags", "description"]);
 
 export function parseCustomPropertyRules(text: string): CustomPropertyRule[] {
 	const seen = new Set<string>();

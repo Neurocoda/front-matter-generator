@@ -44,6 +44,9 @@ export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
 	if (input.enableFileName) {
 		tasks.push("Generate exactly three filename candidates.");
 	}
+	if (input.enableTitle) {
+		tasks.push("Generate one frontmatter title.");
+	}
 	if (input.enableTags) {
 		tasks.push("Generate frontmatter tags.");
 	}
@@ -57,6 +60,9 @@ export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
 	const schemaFields: string[] = [];
 	if (input.enableFileName) {
 		schemaFields.push(`"filenameCandidates":[{"name":"candidate-one","reason":"short reason"},{"name":"candidate-two","reason":"short reason"},{"name":"candidate-three","reason":"short reason"}]`);
+	}
+	if (input.enableTitle) {
+		schemaFields.push(`"title":"concise note title"`);
 	}
 	if (input.enableTags) {
 		schemaFields.push(`"tags":["tag-one"]`);
@@ -87,6 +93,7 @@ export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
 		] : []),
 		"",
 		"Current note context:",
+		...(input.enableTitle ? [`- Existing title: ${input.existingTitle || "(none)"}`] : []),
 		...(input.enableTags ? [`- Current tags: ${currentTags}`] : []),
 		...(input.enableDescription ? [`- Existing description: ${input.existingDescription || "(none)"}`] : []),
 		"",
@@ -110,6 +117,7 @@ export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
 			"- For tags, prefer existing vault tags when possible and avoid tag explosion.",
 			tagPolicyInstruction(input.tagPolicy),
 		] : []),
+		...(input.enableTitle ? ["- Keep the title human-readable, concise, and suitable for Obsidian frontmatter."] : []),
 		...(input.enableDescription ? ["- Use the requested description language only."] : []),
 		...(input.customProperties.length > 0 ? ["- For custom properties, return only the configured property names and keep values compact."] : []),
 		"",

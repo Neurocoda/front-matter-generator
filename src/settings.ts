@@ -1,6 +1,6 @@
 import {App, ButtonComponent, PluginSettingTab, Setting} from "obsidian";
 import FrontMatterGeneratorPlugin from "./main";
-import {normalizeCustomPropertyRows, normalizeCustomPropertyRules} from "./properties";
+import {normalizeCustomPropertyRows} from "./properties";
 import {ApiType, ContentMode, DescriptionLanguage, NamingStyle, TagPolicy, TagWriteMode} from "./types";
 
 const API_TYPE_LABELS: Record<ApiType, string> = {
@@ -143,32 +143,6 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 				});
 		}
 
-		new Setting(containerEl).setName("Description").setHeading();
-
-		new Setting(containerEl)
-			.setName("Enable description generation")
-			.setDesc("Generate and overwrite the frontmatter description.")
-			.addToggle((toggle) => toggle
-				.setValue(this.plugin.settings.enableDescription)
-				.onChange(async (value) => {
-					this.plugin.settings.enableDescription = value;
-					await this.plugin.saveSettings();
-					this.display();
-				}));
-
-		if (this.plugin.settings.enableDescription) {
-			new Setting(containerEl)
-				.setName("Description language")
-				.setDesc("Choose the language used for the frontmatter description.")
-				.addDropdown((dropdown) => dropdown
-					.addOptions(DESCRIPTION_LANGUAGE_LABELS)
-					.setValue(this.plugin.settings.descriptionLanguage)
-					.onChange(async (value) => {
-						this.plugin.settings.descriptionLanguage = value as DescriptionLanguage;
-						await this.plugin.saveSettings();
-					}));
-		}
-
 		new Setting(containerEl).setName("File name").setHeading();
 
 		new Setting(containerEl)
@@ -195,7 +169,42 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		new Setting(containerEl).setName("Tags").setHeading();
+		new Setting(containerEl).setName("Front matter").setHeading();
+
+		new Setting(containerEl)
+			.setName("Enable title generation")
+			.setDesc("Generate and overwrite the frontmatter title.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.enableTitle)
+				.onChange(async (value) => {
+					this.plugin.settings.enableTitle = value;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
+
+		new Setting(containerEl)
+			.setName("Enable description generation")
+			.setDesc("Generate and overwrite the frontmatter description.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.enableDescription)
+				.onChange(async (value) => {
+					this.plugin.settings.enableDescription = value;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
+
+		if (this.plugin.settings.enableDescription) {
+			new Setting(containerEl)
+				.setName("Description language")
+				.setDesc("Choose the language used for the frontmatter description.")
+				.addDropdown((dropdown) => dropdown
+					.addOptions(DESCRIPTION_LANGUAGE_LABELS)
+					.setValue(this.plugin.settings.descriptionLanguage)
+					.onChange(async (value) => {
+						this.plugin.settings.descriptionLanguage = value as DescriptionLanguage;
+						await this.plugin.saveSettings();
+					}));
+		}
 
 		new Setting(containerEl)
 			.setName("Enable tag generation")
@@ -266,7 +275,9 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 				});
 		}
 
-		new Setting(containerEl).setName("Custom properties").setHeading();
+		new Setting(containerEl)
+			.setName("Custom properties")
+			.setDesc("Generate additional frontmatter fields with one instruction per property.");
 		this.renderCustomProperties(containerEl);
 
 		new Setting(containerEl).setName("Safety").setHeading();
@@ -341,7 +352,7 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Add custom property")
-			.setDesc("Custom properties are generated as frontmatter fields. tags and description are reserved.")
+			.setDesc("Custom properties are generated as frontmatter fields. title, tags, and description are reserved.")
 			.addButton((button) => button
 				.setButtonText("Add property")
 				.setIcon("plus")

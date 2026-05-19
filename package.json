@@ -1,13 +1,17 @@
 {
 	"name": "front-matter-generator",
-	"version": "1.0.1",
-	"description": "Generate frontmatter descriptions, tags, optional filenames, and custom properties for Obsidian Markdown files with AI.",
+	"version": "1.1.0",
+	"description": "Generate frontmatter titles, descriptions, tags, optional filenames, and custom properties for Obsidian Markdown files with AI.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"test": "node --test tests/*.test.mjs"
+		"typecheck": "tsc -noEmit -skipLibCheck",
+		"lint": "tsc -noEmit -skipLibCheck",
+		"test": "node --test tests/*.test.mjs",
+		"check-release": "node scripts/check-release.mjs",
+		"verify-tag": "node scripts/verify-tag.mjs"
 	},
 	"author": "Neurocoda",
 	"license": "MIT",
@@ -16,13 +20,14 @@
 		"type": "git",
 		"url": "https://github.com/Neurocoda/front-matter-generator.git"
 	},
+	"bugs": {
+		"url": "https://github.com/Neurocoda/front-matter-generator/issues"
+	},
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
+		"obsidian": "latest",
 		"tslib": "2.4.0",
 		"typescript": "^5.8.3"
-	},
-	"dependencies": {
-		"obsidian": "latest"
 	}
 }
