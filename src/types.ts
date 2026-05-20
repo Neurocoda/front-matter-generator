@@ -4,8 +4,8 @@ export type ApiType = typeof API_TYPES[number];
 export const CONTENT_MODES = ["full-text", "first-lines", "headings-only"] as const;
 export type ContentMode = typeof CONTENT_MODES[number];
 
-export const DESCRIPTION_LANGUAGES = ["chinese", "english", "spanish"] as const;
-export type DescriptionLanguage = typeof DESCRIPTION_LANGUAGES[number];
+export const OUTPUT_LANGUAGES = ["chinese", "english", "spanish"] as const;
+export type OutputLanguage = typeof OUTPUT_LANGUAGES[number];
 
 export const NAMING_STYLES = ["kebab-case", "camelCase", "PascalCase", "snake_case", "Title Case"] as const;
 export type NamingStyle = typeof NAMING_STYLES[number];
@@ -33,7 +33,7 @@ export interface FrontMatterGeneratorSettings {
 	enableTags: boolean;
 	enableDescription: boolean;
 	namingStyle: NamingStyle;
-	descriptionLanguage: DescriptionLanguage;
+	outputLanguage: OutputLanguage;
 	contentMode: ContentMode;
 	lineLimit: number;
 	excludedPaths: string;
@@ -63,7 +63,7 @@ export interface AutoFrontMatterPromptInput {
 	folderPath: string;
 	currentBasename: string;
 	namingStyle: NamingStyle;
-	descriptionLanguage: DescriptionLanguage;
+	outputLanguage: OutputLanguage;
 	contentMode: ContentMode;
 	content: string;
 	currentTags: string[];
@@ -105,7 +105,7 @@ export const DEFAULT_SETTINGS: FrontMatterGeneratorSettings = {
 	enableTags: true,
 	enableDescription: true,
 	namingStyle: "kebab-case",
-	descriptionLanguage: "chinese",
+	outputLanguage: "chinese",
 	contentMode: "first-lines",
 	lineLimit: 200,
 	excludedPaths: "templates",
@@ -118,4 +118,5 @@ export const DEFAULT_SETTINGS: FrontMatterGeneratorSettings = {
 
 export type LegacySettings = Partial<Omit<FrontMatterGeneratorSettings, "customProperties">> & {
 	customProperties?: string | CustomPropertyRule[];
+	descriptionLanguage?: OutputLanguage;
 };

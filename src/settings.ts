@@ -1,7 +1,7 @@
 import {App, ButtonComponent, PluginSettingTab, Setting} from "obsidian";
 import FrontMatterGeneratorPlugin from "./main";
 import {normalizeCustomPropertyRows} from "./properties";
-import {ApiType, ContentMode, DescriptionLanguage, NamingStyle, TagPolicy, TagWriteMode} from "./types";
+import {ApiType, ContentMode, NamingStyle, OutputLanguage, TagPolicy, TagWriteMode} from "./types";
 
 const API_TYPE_LABELS: Record<ApiType, string> = {
 	"chat-completions": "Chat Completions",
@@ -14,7 +14,7 @@ const CONTENT_MODE_LABELS: Record<ContentMode, string> = {
 	"headings-only": "Headings only",
 };
 
-const DESCRIPTION_LANGUAGE_LABELS: Record<DescriptionLanguage, string> = {
+const OUTPUT_LANGUAGE_LABELS: Record<OutputLanguage, string> = {
 	chinese: "Chinese",
 	english: "English",
 	spanish: "Spanish",
@@ -110,6 +110,19 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 					await this.plugin.testProviderConnection();
 				}));
 
+		new Setting(containerEl).setName("Generation").setHeading();
+
+		new Setting(containerEl)
+			.setName("Output language")
+			.setDesc("Controls generated titles, descriptions, new tags, custom text values, and filename words.")
+			.addDropdown((dropdown) => dropdown
+				.addOptions(OUTPUT_LANGUAGE_LABELS)
+				.setValue(this.plugin.settings.outputLanguage)
+				.onChange(async (value) => {
+					this.plugin.settings.outputLanguage = value as OutputLanguage;
+					await this.plugin.saveSettings();
+				}));
+
 		new Setting(containerEl).setName("Content").setHeading();
 
 		new Setting(containerEl)
@@ -192,19 +205,6 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.display();
 				}));
-
-		if (this.plugin.settings.enableDescription) {
-			new Setting(containerEl)
-				.setName("Description language")
-				.setDesc("Choose the language used for the frontmatter description.")
-				.addDropdown((dropdown) => dropdown
-					.addOptions(DESCRIPTION_LANGUAGE_LABELS)
-					.setValue(this.plugin.settings.descriptionLanguage)
-					.onChange(async (value) => {
-						this.plugin.settings.descriptionLanguage = value as DescriptionLanguage;
-						await this.plugin.saveSettings();
-					}));
-		}
 
 		new Setting(containerEl)
 			.setName("Enable tag generation")

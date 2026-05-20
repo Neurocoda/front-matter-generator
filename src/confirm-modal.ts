@@ -1,13 +1,13 @@
 import {App, ButtonComponent, Modal, Setting} from "obsidian";
 import {cleanNameToStyle} from "./naming";
-import {getContentModeLabel, getDescriptionLanguageLabel} from "./content";
+import {getContentModeLabel, getOutputLanguageLabel} from "./content";
 import {getExtension, getFolderPath} from "./path";
 import {FilenameCandidate, FrontMatterGeneratorSettings, FrontMatterPropertyValue} from "./types";
 
 interface FrontMatterConfirmModalOptions {
 	filePath: string;
 	contentMode: string;
-	descriptionLanguage: string;
+	outputLanguage: string;
 	tagPolicy: string;
 	settings: Pick<FrontMatterGeneratorSettings, "enableFileName" | "enableTitle" | "enableTags" | "enableDescription" | "namingStyle">;
 	filenameCandidates: FilenameCandidate[];
@@ -55,10 +55,8 @@ export class FrontMatterConfirmModal extends Modal {
 		summaryEl.createSpan({text: this.options.filePath, cls: "front-matter-generator-path"});
 		summaryEl.createEl("br");
 		summaryEl.createSpan({text: `Content mode: ${getContentModeLabel(this.options.contentMode as any)}`});
-		if (this.options.settings.enableDescription) {
-			summaryEl.createEl("br");
-			summaryEl.createSpan({text: `Description language: ${getDescriptionLanguageLabel(this.options.descriptionLanguage as any)}`});
-		}
+		summaryEl.createEl("br");
+		summaryEl.createSpan({text: `Output language: ${getOutputLanguageLabel(this.options.outputLanguage as any)}`});
 		if (this.options.settings.enableTags) {
 			summaryEl.createEl("br");
 			summaryEl.createSpan({text: `Tag policy: ${this.options.tagPolicy}`});

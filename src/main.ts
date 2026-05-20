@@ -37,7 +37,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 
 			menu.addItem((item) => {
 				item
-					.setTitle("Auto: front matter")
+					.setTitle("Generate front matter")
 					.setIcon("sparkles")
 					.onClick(async () => {
 						await this.generateForFile(file);
@@ -48,9 +48,15 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 
 	async loadSettings(): Promise<void> {
 		const loaded = await this.loadData() as LegacySettings | null;
+		const {
+			descriptionLanguage: legacyDescriptionLanguage,
+			...loadedSettings
+		} = loaded ?? {};
+		const outputLanguage = loadedSettings.outputLanguage ?? legacyDescriptionLanguage ?? DEFAULT_SETTINGS.outputLanguage;
 		this.settings = {
 			...DEFAULT_SETTINGS,
-			...(loaded ?? {}),
+			...loadedSettings,
+			outputLanguage,
 			customProperties: normalizeCustomPropertyRules(loaded?.customProperties),
 		};
 	}
@@ -151,7 +157,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 				folderPath,
 				currentBasename,
 				namingStyle: this.settings.namingStyle,
-				descriptionLanguage: this.settings.descriptionLanguage,
+				outputLanguage: this.settings.outputLanguage,
 				contentMode: this.settings.contentMode,
 				content,
 				currentTags,
@@ -185,7 +191,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 			new FrontMatterConfirmModal(this.app, {
 				filePath: file.path,
 				contentMode: this.settings.contentMode,
-				descriptionLanguage: this.settings.descriptionLanguage,
+				outputLanguage: this.settings.outputLanguage,
 				tagPolicy: this.settings.tagPolicy,
 				settings: {
 					enableFileName: this.settings.enableFileName,

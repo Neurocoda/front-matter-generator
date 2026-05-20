@@ -26,7 +26,7 @@ export function extractPromptContent(markdown: string, mode: ContentMode, lineLi
 	}
 }
 
-export function getDescriptionLanguageLabel(language: string): string {
+export function getOutputLanguageLabel(language: string): string {
 	switch (language) {
 		case "chinese":
 			return "Chinese";

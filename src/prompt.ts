@@ -1,7 +1,7 @@
 import {getContentModeLabel} from "./content";
-import {getDescriptionLanguageLabel} from "./content";
+import {getOutputLanguageLabel} from "./content";
 import {normalizeTagsForPrompt} from "./tags";
-import {AutoFrontMatterPromptInput, DescriptionLanguage, NamingStyle, TagPolicy} from "./types";
+import {AutoFrontMatterPromptInput, NamingStyle, OutputLanguage, TagPolicy} from "./types";
 
 function buildSystemPrompt(): string {
 	return [
@@ -27,8 +27,8 @@ function namingStyleInstruction(style: NamingStyle): string {
 	return `The filename candidate names must already fit ${style}.`;
 }
 
-function descriptionLanguageLabel(language: DescriptionLanguage): string {
-	return getDescriptionLanguageLabel(language);
+function outputLanguageLabel(language: OutputLanguage): string {
+	return getOutputLanguageLabel(language);
 }
 
 export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
@@ -84,8 +84,8 @@ export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
 		`- Vault-relative path: ${input.relativePath}`,
 		`- Folder path: ${input.folderPath || "(vault root)"}`,
 		`- Current basename: ${input.currentBasename}`,
+		`- Output language: ${outputLanguageLabel(input.outputLanguage)}`,
 		...(input.enableFileName ? [`- Naming style: ${input.namingStyle}`] : []),
-		...(input.enableDescription ? [`- Description language: ${descriptionLanguageLabel(input.descriptionLanguage)}`] : []),
 		`- Content mode: ${getContentModeLabel(input.contentMode)}`,
 		...(input.enableTags ? [
 			`- Tag policy: ${input.tagPolicy}`,
@@ -111,15 +111,18 @@ export function buildUserPrompt(input: AutoFrontMatterPromptInput): string {
 		...(input.enableFileName ? [
 			"- Keep filenames short, specific, and useful in a personal knowledge vault.",
 			"- Return exactly three filename candidates.",
+			"- Generate filename candidate words in the requested output language before the local naming style cleanup is applied.",
 			namingStyleInstruction(input.namingStyle),
 		] : []),
 		...(input.enableTags ? [
 			"- For tags, prefer existing vault tags when possible and avoid tag explosion.",
+			"- Prefer existing tags even when they are not in the requested output language.",
+			"- Generate new tags in the requested output language when the selected tag policy allows new tags.",
 			tagPolicyInstruction(input.tagPolicy),
 		] : []),
-		...(input.enableTitle ? ["- Keep the title human-readable, concise, and suitable for Obsidian frontmatter."] : []),
-		...(input.enableDescription ? ["- Use the requested description language only."] : []),
-		...(input.customProperties.length > 0 ? ["- For custom properties, return only the configured property names and keep values compact."] : []),
+		...(input.enableTitle ? ["- Keep the title human-readable, concise, suitable for Obsidian frontmatter, and in the requested output language."] : []),
+		...(input.enableDescription ? ["- Keep the description concise, faithful to the note, and in the requested output language."] : []),
+		...(input.customProperties.length > 0 ? ["- For custom properties, return only the configured property names, keep values compact, and use the requested output language for human-readable text values."] : []),
 		"",
 		"Return JSON only using this schema:",
 		`{${schemaFields.join(",")}}`,

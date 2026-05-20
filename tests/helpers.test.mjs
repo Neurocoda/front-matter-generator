@@ -82,6 +82,11 @@ test("cleanNameToStyle supports common naming styles", () => {
 	assert.equal(naming.cleanNameToStyle("Learning Web Development.md", "Title Case"), "Learning Web Development");
 });
 
+test("cleanNameToStyle preserves unicode words for global language output", () => {
+	assert.equal(naming.cleanNameToStyle("知识 管理 方法.md", "kebab-case"), "知识-管理-方法");
+	assert.equal(naming.cleanNameToStyle("gestión de conocimiento.md", "snake_case"), "gestion_de_conocimiento");
+});
+
 test("tag filtering enforces existing-only policy", () => {
 	const existing = [{tag: "ai", count: 3}, {tag: "obsidian", count: 2}];
 	assert.deepEqual(tags.filterSuggestedTags(["AI", "new-topic", "#obsidian"], existing, "existing-only", 5), ["ai", "obsidian"]);
@@ -188,7 +193,7 @@ test("buildUserPrompt includes tag and path context", () => {
 		folderPath: "inbox",
 		currentBasename: "rest",
 		namingStyle: "kebab-case",
-		descriptionLanguage: "chinese",
+		outputLanguage: "chinese",
 		contentMode: "first-lines",
 		content: "# REST\nBody",
 		currentTags: ["api"],
@@ -203,9 +208,10 @@ test("buildUserPrompt includes tag and path context", () => {
 	assert.match(text, /Vault-relative path: inbox\/rest\.md/);
 	assert.match(text, /Existing title: Old title/);
 	assert.match(text, /"title":"concise note title"/);
-	assert.match(text, /Description language: Chinese/);
+	assert.match(text, /Output language: Chinese/);
 	assert.match(text, /api \(3\)/);
 	assert.match(text, /status: choose one/);
+	assert.match(text, /new tags in the requested output language/);
 });
 
 test("buildUserPrompt omits disabled tasks", () => {
@@ -218,7 +224,7 @@ test("buildUserPrompt omits disabled tasks", () => {
 		folderPath: "inbox",
 		currentBasename: "rest",
 		namingStyle: "kebab-case",
-		descriptionLanguage: "chinese",
+		outputLanguage: "chinese",
 		contentMode: "first-lines",
 		content: "# REST\nBody",
 		currentTags: ["api"],
@@ -236,6 +242,6 @@ test("buildUserPrompt omits disabled tasks", () => {
 	assert.doesNotMatch(text, /"tags":/);
 	assert.doesNotMatch(text, /"description":/);
 	assert.match(text, /"properties"/);
-	assert.doesNotMatch(text, /Description language:/);
+	assert.match(text, /Output language: Chinese/);
 	assert.doesNotMatch(text, /Vault tag context:/);
 });

@@ -12,7 +12,7 @@ function normalizeWords(value: string): string[] {
 		.replace(/([A-Z]+)([A-Z][a-eg-z]{2,})/g, "$1 $2")
 		.normalize("NFKD")
 		.replace(/[\u0300-\u036f]/g, "")
-		.replace(/[^A-Za-z0-9]+/g, " ")
+		.replace(/[^\p{L}\p{N}]+/gu, " ")
 		.trim()
 		.split(/\s+/)
 		.filter((part) => part.length > 0) ?? [];
