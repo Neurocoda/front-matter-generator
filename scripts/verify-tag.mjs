@@ -2,7 +2,7 @@ import {readFileSync} from "node:fs";
 import process from "node:process";
 
 const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
-const tag = process.env.GITHUB_REF_NAME ?? "";
+const tag = (process.env.GITHUB_REF_NAME ?? "").replace(/^v/, "");
 const expected = manifest.version;
 
 if (tag !== expected) {
