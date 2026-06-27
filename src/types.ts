@@ -42,6 +42,7 @@ export interface FrontMatterGeneratorSettings {
 	tagContextLimit: number;
 	tagWriteMode: TagWriteMode;
 	customProperties: CustomPropertyRule[];
+	enableDebugLog: boolean;
 }
 
 export interface FilenameCandidate {
@@ -88,11 +89,12 @@ export interface AutoFrontMatterProviderRequest extends AutoFrontMatterPromptInp
 	apiBaseUrl: string;
 	apiKey: string;
 	model: string;
+	debugLog?: (message: string) => void;
 }
 
 export interface AutoFrontMatterProvider {
 	generateFrontMatter(request: AutoFrontMatterProviderRequest): Promise<AutoFrontMatterResult>;
-	testConnection(request: Pick<AutoFrontMatterProviderRequest, "apiBaseUrl" | "apiKey" | "model">): Promise<void>;
+	testConnection(request: Pick<AutoFrontMatterProviderRequest, "apiBaseUrl" | "apiKey" | "model" | "debugLog">): Promise<void>;
 }
 
 export const DEFAULT_SETTINGS: FrontMatterGeneratorSettings = {
@@ -114,6 +116,7 @@ export const DEFAULT_SETTINGS: FrontMatterGeneratorSettings = {
 	tagContextLimit: 300,
 	tagWriteMode: "replace",
 	customProperties: [],
+	enableDebugLog: false,
 };
 
 export type LegacySettings = Partial<Omit<FrontMatterGeneratorSettings, "customProperties">> & {

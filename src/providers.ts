@@ -4,7 +4,8 @@ import {pickConfiguredProperties} from "./properties";
 import {AutoFrontMatterProvider, AutoFrontMatterProviderRequest, AutoFrontMatterResult, FilenameCandidate} from "./types";
 
 const TEMPERATURE = 0.2;
-const MAX_OUTPUT_TOKENS = 700;
+const MAX_OUTPUT_TOKENS = 4096;
+const TEST_MAX_TOKENS = 64;
 
 function trimTrailingSlash(value: string): string {
 	return value.trim().replace(/\/+$/g, "");
@@ -23,6 +24,8 @@ function extractChatText(responseJson: unknown): string {
 		choices?: Array<{
 			message?: {
 				content?: string | Array<{type?: string; text?: string}>;
+				reasoning_content?: string;
+				reasoning?: string;
 			};
 			text?: string;
 		}>;
@@ -30,11 +33,19 @@ function extractChatText(responseJson: unknown): string {
 
 	const firstChoice = response.choices?.[0];
 	const content = firstChoice?.message?.content;
-	if (typeof content === "string") {
+	if (typeof content === "string" && content.trim().length > 0) {
 		return content;
 	}
 	if (Array.isArray(content)) {
-		return content.map((part) => part.text ?? "").join("\n");
+		const text = content.map((part) => part.text ?? "").join("\n").trim();
+		if (text) {
+			return text;
+		}
+	}
+	// Fallback for models that put output in reasoning fields (e.g. DeepSeek R1 via proxies)
+	const reasoning = firstChoice?.message?.reasoning_content ?? firstChoice?.message?.reasoning;
+	if (typeof reasoning === "string" && reasoning.trim()) {
+		return reasoning;
 	}
 	return firstChoice?.text ?? "";
 }
@@ -59,16 +70,22 @@ function extractResponsesText(responseJson: unknown): string {
 
 function extractJsonText(text: string): string {
 	const trimmed = text.trim();
-	const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+	// Strip XML-style thinking blocks that some reasoning models emit (e.g.  response)
+	const cleaned = trimmed
+		.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+		.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
+		.replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+		.trim();
+	const fenced = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
 	if (fenced?.[1]) {
 		return fenced[1].trim();
 	}
-	const firstBrace = trimmed.indexOf("{");
-	const lastBrace = trimmed.lastIndexOf("}");
+	const firstBrace = cleaned.indexOf("{");
+	const lastBrace = cleaned.lastIndexOf("}");
 	if (firstBrace !== -1 && lastBrace > firstBrace) {
-		return trimmed.slice(firstBrace, lastBrace + 1);
+		return cleaned.slice(firstBrace, lastBrace + 1);
 	}
-	return trimmed;
+	return cleaned;
 }
 
 function toString(value: unknown): string {

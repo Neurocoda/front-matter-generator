@@ -295,6 +295,50 @@ export class AutoFrontMatterSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+
+		new Setting(containerEl).setName("Debug").setHeading();
+
+		new Setting(containerEl)
+			.setName("Enable debug logging")
+			.setDesc("When enabled, API requests and responses are logged for troubleshooting. Logs are stored in memory only and cleared on plugin reload.")
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.settings.enableDebugLog)
+				.onChange(async (value) => {
+					this.plugin.settings.enableDebugLog = value;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
+
+		if (this.plugin.settings.enableDebugLog) {
+			const logContainer = containerEl.createDiv({cls: "front-matter-generator-debug-log"});
+			const logArea = logContainer.createEl("textarea", {
+				attr: {
+					readonly: "true",
+					rows: "8",
+					style: "width:100%;font-family:monospace;font-size:11px;resize:vertical;",
+				},
+			});
+			logArea.value = this.plugin.debugLog.length > 0
+				? this.plugin.debugLog.join("\n")
+				: "(No log entries yet. Run a test or generate front matter to see output.)";
+
+			const buttonRow = logContainer.createDiv({cls: "front-matter-generator-debug-buttons"});
+			new ButtonComponent(buttonRow)
+				.setButtonText("Refresh")
+				.setIcon("refresh-cw")
+				.onClick(() => {
+					logArea.value = this.plugin.debugLog.length > 0
+						? this.plugin.debugLog.join("\n")
+						: "(No log entries yet.)";
+				});
+			new ButtonComponent(buttonRow)
+				.setButtonText("Clear")
+				.setIcon("trash")
+				.onClick(() => {
+					this.plugin.clearDebugLog();
+					logArea.value = "(Log cleared.)";
+				});
+		}
 	}
 
 	private renderCustomProperties(containerEl: HTMLElement): void {

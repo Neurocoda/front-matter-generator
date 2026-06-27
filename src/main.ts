@@ -11,6 +11,24 @@ import {AutoFrontMatterProvider, AutoFrontMatterResult, DEFAULT_SETTINGS, FrontM
 
 export default class FrontMatterGeneratorPlugin extends Plugin {
 	settings: FrontMatterGeneratorSettings = DEFAULT_SETTINGS;
+	debugLog: string[] = [];
+
+	addDebugLog(msg: string): void {
+		if (!this.settings.enableDebugLog) { return; }
+		const ts = new Date().toISOString().slice(11, 23);
+		this.debugLog.push(`[${ts}] ${msg}`);
+		if (this.debugLog.length > 500) {
+			this.debugLog = this.debugLog.slice(-300);
+		}
+	}
+
+	clearDebugLog(): void {
+		this.debugLog = [];
+	}
+
+	private logCallback(): ((msg: string) => void) | undefined {
+		return this.settings.enableDebugLog ? this.addDebugLog.bind(this) : undefined;
+	}
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -80,15 +98,19 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 			return;
 		}
 
+		this.addDebugLog("Testing API provider connection...");
 		new Notice("Front Matter Generator: testing API provider...");
 		try {
 			await this.getProvider().testConnection({
 				apiBaseUrl: this.settings.apiBaseUrl,
 				apiKey: this.settings.apiKey,
 				model: this.settings.model,
+				debugLog: this.logCallback(),
 			});
+			this.addDebugLog("API provider test succeeded.");
 			new Notice("Front Matter Generator: API provider test succeeded.");
 		} catch (error) {
+			this.addDebugLog(`Provider test failed: ${this.errorMessage(error)}`);
 			console.error("Front Matter Generator provider test failed", error);
 			new Notice(`Front Matter Generator: provider test failed. ${this.errorMessage(error)}`);
 		}
@@ -145,10 +167,12 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 			}
 			const existingTags = collectVaultTags(this.app).slice(0, Math.max(0, Math.floor(this.settings.tagContextLimit)));
 
+			this.addDebugLog(`Generating frontmatter for ${file.path}`);
 			const result = await this.getProvider().generateFrontMatter({
 				apiBaseUrl: this.settings.apiBaseUrl,
 				apiKey: this.settings.apiKey,
 				model: this.settings.model,
+				debugLog: this.logCallback(),
 				enableFileName: this.settings.enableFileName,
 				enableTitle: this.settings.enableTitle,
 				enableTags: this.settings.enableTags,
@@ -215,6 +239,7 @@ export default class FrontMatterGeneratorPlugin extends Plugin {
 				},
 			}).open();
 		} catch (error) {
+			this.addDebugLog(`Generate failed: ${this.errorMessage(error)}`);
 			console.error("Front Matter Generator failed", error);
 			new Notice(`Front Matter Generator: ${this.errorMessage(error)}`);
 		}

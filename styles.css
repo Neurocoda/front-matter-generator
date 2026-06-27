@@ -110,3 +110,26 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* Debug log */
+.front-matter-generator-debug-log {
+	margin: 8px 0;
+}
+
+.front-matter-generator-debug-log textarea {
+	width: 100%;
+	font-family: var(--font-monospace);
+	font-size: 11px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+	resize: vertical;
+}
+
+.front-matter-generator-debug-buttons {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
